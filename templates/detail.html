@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="{{lang}}">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Employee | MonitorGuard</title>
+    <style>
+        :root {
+            font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+            color: #e9efff;
+            background: #0b1020
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0
+        }
+
+        a {
+            color: #a9b8ff;
+            text-decoration: none
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh
+        }
+
+        .sidebar {
+            width: 245px;
+            flex-shrink: 0;
+            background: #111a2e;
+            padding: 28px 20px;
+            border-right: 1px solid #2a3650
+        }
+
+        .brand {
+            font-size: 23px;
+            font-weight: 750;
+            margin-bottom: 34px
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px;
+            border-radius: 10px;
+            color: #d1dcf7
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #25365b
+        }
+
+        .main {
+            flex: 1;
+            min-width: 0;
+            max-width: 1600px;
+            padding: 32px 36px
+        }
+
+        .top {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap
+        }
+
+        .avatar {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #5064a3;
+            background: #2a3a59;
+            display: grid;
+            place-items: center;
+            font-size: 32px;
+            font-weight: 750
+        }
+
+        .top h1 {
+            margin: 0;
+            font-size: 28px
+        }
+
+        .muted {
+            color: #a5b3cd
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin: 24px 0
+        }
+
+        .card,
+        .panel {
+            background: #172238;
+            border: 1px solid #2b3955;
+            border-radius: 15px;
+            padding: 22px
+        }
+
+        .card strong {
+            display: block;
+            font-size: 28px;
+            margin-top: 6px
+        }
+
+        .panel {
+            margin: 20px 0
+        }
+
+        .panel h2 {
+            margin: 0 0 8px;
+            font-size: 20px
+        }
+
+        .grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px
+        }
+
+        .button,
+        button {
+            background: #526af3;
+            color: #fff;
+            border: 0;
+            border-radius: 9px;
+            padding: 11px 15px;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer
+        }
+
+        .button.secondary,
+        button.secondary {
+            background: #2c3e60
+        }
+
+        .button:hover,
+        button:hover {
+            filter: brightness(1.1)
+        }
+
+        input {
+            background: #0e1729;
+            color: white;
+            border: 1px solid #425273;
+            border-radius: 8px;
+            padding: 10px;
+            max-width: 100%
+        }
+
+        input[type=file] {
+            width: 100%
+        }
+
+        form.controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 16px 0
+        }
+
+        .scroll {
+            overflow-x: auto
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #31405c;
+            vertical-align: top
+        }
+
+        th {
+            color: #b5c4df;
+            font-size: 13px
+        }
+
+        .status {
+            display: inline-block;
+            border-radius: 30px;
+            padding: 3px 10px;
+            background: #31405c;
+            font-size: 12px;
+            text-transform: capitalize
+        }
+
+        .status.approved {
+            background: #17563c;
+            color: #b4f5ce
+        }
+
+        .status.pending {
+            background: #5d4b23;
+            color: #ffe6a2
+        }
+
+        .status.denied,
+        .status.unavailable,
+        .status.expired {
+            background: #5d3038;
+            color: #ffc7cb
+        }
+
+        .small {
+            font-size: 13px
+        }
+
+        .empty {
+            padding: 22px;
+            text-align: center;
+            color: #a5b3cd
+        }
+
+        .section-heading {
+            margin-top: 26px
+        }
+
+        details {
+            margin-top: 12px
+        }
+
+        summary {
+            cursor: pointer;
+            color: #b7c7ff
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap
+        }
+
+        .thumb {
+            height: 64px;
+            width: 90px;
+            object-fit: cover;
+            border-radius: 7px
+        }
+
+        .label {
+            display: block;
+            font-size: 13px;
+            color: #b6c5e0;
+            margin-bottom: 5px
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+            margin-top: 18px
+        }
+
+        .screenshot-card {
+            border: 1px solid #344360;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #101b30
+        }
+
+        .screenshot-card img {
+            display: block;
+            width: 100%;
+            height: 175px;
+            object-fit: cover;
+            background: #0b1020
+        }
+
+        .screenshot-info {
+            padding: 12px
+        }
+
+        .screenshot-info strong {
+            display: block
+        }
+
+        .screenshot-info p {
+            margin: 4px 0 0
+        }
+
+        .screenshot-card a:focus-visible {
+            outline: 3px solid #a9b8ff;
+            outline-offset: -3px
+        }
+
+        @media(max-width:1050px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .grid2 {
+                grid-template-columns: 1fr
+            }
+        }
+
+        @media(max-width:700px) {
+            .layout {
+                display: block
+            }
+
+            .sidebar {
+                width: auto;
+                padding: 14px
+            }
+
+            .sidebar a {
+                display: inline-block;
+                padding: 7px
+            }
+
+            .brand {
+                margin-bottom: 8px
+            }
+
+            .main {
+                padding: 18px
+            }
+
+            .cards {
+                grid-template-columns: repeat(2, minmax(0, 1fr))
+            }
+
+            .top h1 {
+                font-size: 23px
+            }
+        }
+    </style>
+</head>
+
+<body><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:9px 16px;background:#172238;border-bottom:1px solid #31405c"><span style="color:#a5b3cd">{{t('language')}}:</span><a href="{{url_for('set_language',lang='en')}}">English</a><a href="{{url_for('set_language',lang='ru')}}">Русский</a><a href="{{url_for('set_language',lang='uz')}}">O‘zbekcha</a></div>
+    <div style="padding:10px 16px;background:#182b49;border-bottom:1px solid #3a5272"><a href="/">← Dashboard</a> &nbsp;
+        · &nbsp; <a href="/keyword-dlp">Keyword DLP</a></div>
+    <div class="layout">
+        <nav class="sidebar">
+            <div class="brand">◈ MonitorGuard</div><a href="/">Overview</a><a href="/devices" class="active">Employees
+                &amp; devices</a><a href="/activity">Activity</a><a href="/domain-policies">Domain policies</a><a
+                href="/transfers">File transfers</a><a href="/audit-log">Audit log</a>
+        </nav>
+        <main class="main">
+            <a href="/">← All employees</a>
+            <div class="top" style="margin-top:18px">
+                {% if profile and profile.photo_file %}<img class="avatar"
+                    src="{{url_for('employee_photo',device_id=device.id)}}" alt="Employee photo">{% else %}<div
+                    class="avatar">{{(profile.display_name if profile and profile.display_name else device.name or
+                    device.agent_id)[:1]|upper}}</div>{% endif %}
+                <div>
+                    <h1>{{profile.display_name if profile and profile.display_name else device.name or device.agent_id}}
+                    </h1>
+                    <div class="muted">{{device.agent_id}} · Last seen: {{device.last_seen or 'Never'}} · {% if
+                        device.enabled %}Enabled{% else %}Disabled{% endif %}</div><a class="small"
+                        href="{{url_for('export',device_id=device.id)}}">Export application CSV</a>
+                </div>
+            </div>
+            {% for message in get_flashed_messages() %}<div class="panel">{{message}}</div>{% endfor %}
+            <div class="cards">
+                <div class="card"><span class="muted">Applications</span><strong>{{app_totals|length}}</strong></div>
+                <div class="card"><span class="muted">Web domains</span><strong>{{web_totals|length}}</strong></div>
+                <div class="card"><span class="muted">DLP alerts</span><strong>{{events|length}}</strong></div>
+                <div class="card"><span class="muted">Camera/capture history</span><strong>{{captures|length}}</strong>
+                </div>
+            </div>
+            <div class="grid2">
+                <section class="panel">
+                    <h2>{{t('employee_profile')}}</h2>
+                    <p class="muted small">Assign a display name and upload a profile picture. Stored privately and
+                        visible to signed-in administrators.</p>
+                    <form action="{{url_for('update_employee_profile',device_id=device.id)}}" method="post"
+                        enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{csrf_token()}}"><label
+                            class="label" for="display_name">Employee name</label><input id="display_name"
+                            name="display_name" maxlength="120" placeholder="Full name"
+                            value="{{profile.display_name if profile and profile.display_name else ''}}"><label
+                            class="label" for="photo" style="margin-top:12px">Profile photo (JPG/PNG, max 2
+                            MB)</label><input id="photo" type="file" name="photo"
+                            accept="image/jpeg,image/png,image/webp">
+                        <div style="margin-top:15px"><button>{{t('save_profile')}}</button></div>
+                    </form>
+                </section>
+                <section class="panel">
+                    <h2>Work-session screenshots and employee-approved camera</h2>
+                    <p class="muted small">Take Screenshot works only while the employee has started work tracking with
+                        screenshot monitoring visible. Camera requests still require individual approval.</p>
+                    <div class="actions">
+                        <form method="post" action="{{url_for('take_screenshot',device_id=device.id)}}"><input
+                                type="hidden" name="csrf" value="{{csrf_token()}}"><button>{{t('take_screenshot')}}</button>
+                        </form>
+                        <form method="post" action="{{url_for('request_capture',device_id=device.id)}}"><input
+                                type="hidden" name="csrf" value="{{csrf_token()}}"><input type="hidden" name="kind"
+                                value="camera"><button class="secondary">{{t('camera_request')}}</button></form>
+                    </div>
+                    <p class="small muted">Screenshots appear in the work-session gallery below. Refresh after a few
+                        seconds.</p>
+                </section>
+            </div>
+            <section class="panel">
+                <h2>{{t('camera_history')}}</h2>
+                <div class="scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{t('requested')}}</th>
+                                <th>{{t('type')}}</th>
+                                <th>{{t('status')}}</th>
+                                <th>{{t('result')}}</th>
+                            </tr>
+                        </thead>
+                        <tbody>{% for c in captures %}<tr>
+                                <td>{{c.requested_at.strftime('%Y-%m-%d %H:%M:%S') if c.requested_at else '—'}}</td>
+                                <td>{{'Screenshot' if c.kind=='screen' else 'Camera photo'}}</td>
+                                <td><span class="status {{c.status}}">{{'Completed' if c.status=='approved' else
+                                        c.status}}</span></td>
+                                <td>{% if c.status=='approved' %}<a href="{{url_for('capture_image',capture_id=c.id)}}"
+                                        target="_blank" rel="noopener"><img class="thumb"
+                                            src="{{url_for('capture_image',capture_id=c.id)}}" alt="Approved capture">
+                                        View image</a>{% else %}—{% endif %}</td>
+                            </tr>{% else %}<tr>
+                                <td colspan="4" class="empty">No camera or legacy capture requests recorded.</td>
+                            </tr>{% endfor %}</tbody>
+                    </table>
+                </div>
+            </section>
+            <section class="panel" id="work-screenshots">
+                <h2>{{t('work_screenshots')}}</h2>
+                <p class="muted small">Screenshots taken during an active employee-started work-tracking session. Click
+                    a thumbnail to view the full image.</p>
+                {% if work_screenshots %}
+                <div class="screenshot-grid">
+                    {% for shot in work_screenshots %}
+                    <div class="screenshot-card">
+                        <a href="{{url_for('scheduled_screenshot_image',screenshot_id=shot.id)}}" target="_blank"
+                            rel="noopener noreferrer" aria-label="View screenshot {{shot.id}}"><img
+                                src="{{url_for('scheduled_screenshot_image',screenshot_id=shot.id)}}"
+                                alt="Screenshot {{shot.id}} from work session {{shot.session_id}}" loading="lazy"></a>
+                        <div class="screenshot-info"><strong>{{shot.captured_at.strftime('%Y-%m-%d %H:%M:%S') if
+                                shot.captured_at else 'Unknown capture time'}}</strong>
+                            <p class="muted small">Session #{{shot.session_id}} · Screenshot #{{shot.id}}</p><a
+                                class="small" href="{{url_for('scheduled_screenshot_image',screenshot_id=shot.id)}}"
+                                target="_blank" rel="noopener noreferrer">View full image</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}<div class="empty">No work-session screenshots available for this employee.</div>{% endif %}
+            </section>
+            <div class="grid2">
+                <section class="panel">
+                    <section class="panel"><h2>{{t('device_settings')}}</h2><p class="muted small">{{t('settings_help')}}</p><form method="post" action="{{url_for('update_agent_settings',device_id=device.id)}}"><input type="hidden" name="csrf" value="{{csrf_token()}}"><label class="label">{{t('screenshot_interval')}}</label><input type="number" min="60" max="3600" name="screenshot_interval" value="{{agent_settings.screenshot_interval if agent_settings else 300}}" required><label style="display:block;margin-top:12px"><input type="checkbox" name="screenshots_enabled" {% if not agent_settings or agent_settings.screenshots_enabled %}checked{% endif %}> {{t('screenshots_enabled')}}</label><label style="display:block;margin-top:10px"><input type="checkbox" name="keyword_enabled" {% if not agent_settings or agent_settings.keyword_enabled %}checked{% endif %}> {{t('keyword_enabled')}}</label><button style="margin-top:12px">{{t('save_settings')}}</button></form></section>
+<h2>{{t('application_usage')}}</h2>
+                    <p class="muted small">Grouped totals — each application appears only once.</p>
+                    <div class="scroll">
+                        <table>
+                            <tr>
+                                <th>Application</th>
+                                <th>Active / total</th>
+                                <th>Idle</th>
+                            </tr>{% for name,sec,idle in app_totals %}<tr>
+                                <td>{{name}}</td>
+                                <td>{{((sec-idle)/60)|round(1)}} / {{(sec/60)|round(1)}} min</td>
+                                <td>{{(idle/60)|round(1)}} min</td>
+                            </tr>{% else %}<tr>
+                                <td colspan="3" class="empty">{{t('no_reports')}}</td>
+                            </tr>{% endfor %}
+                        </table>
+                    </div>
+                </section>
+                <section class="panel">
+                    <h2>{{t('website_usage')}}</h2>
+                    <p class="muted small">Domains collected by the optional managed browser extension.</p>
+                    <div class="scroll">
+                        <table>
+                            <tr>
+                                <th>{{t('domain')}}</th>
+                                <th>Duration</th>
+                            </tr>{% for domain,sec in web_totals %}<tr>
+                                <td>{{domain}}</td>
+                                <td>{{(sec/60)|round(1)}} min</td>
+                            </tr>{% else %}<tr>
+                                <td colspan="2" class="empty">No domain data yet. Configure the browser extension.</td>
+                            </tr>{% endfor %}
+                        </table>
+                    </div>
+                </section>
+            </div>
+            <section class="panel">
+                <details>
+                    <summary><strong>Detailed event timeline ({{timeline|length}} events)</strong></summary>
+                    <p class="muted small">Individual samples remain available for troubleshooting and auditing.</p>
+                    <div class="scroll">
+                        <table>
+                            <tr>
+                                <th>Time</th>
+                                <th>{{t('type')}}</th>
+                                <th>Activity</th>
+                                <th>Details</th>
+                            </tr>{% for x in timeline %}<tr>
+                                <td>{{x.at}}</td>
+                                <td>{{x.kind}}</td>
+                                <td>{{x.description}}</td>
+                                <td>{{x.details}}</td>
+                            </tr>{% else %}<tr>
+                                <td colspan="4">No events</td>
+                            </tr>{% endfor %}
+                        </table>
+                    </div>
+                </details>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>

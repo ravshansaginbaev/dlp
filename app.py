@@ -13,6 +13,19 @@ db=SQLAlchemy(app)
 def utc():return dt.datetime.now(dt.timezone.utc)
 class Device(db.Model):
  id=db.Column(db.Integer,primary_key=True);agent_id=db.Column(db.String(100),unique=True,nullable=False);name=db.Column(db.String(120));last_seen=db.Column(db.DateTime(timezone=True));enabled=db.Column(db.Boolean,default=True)
+class AgentCredential(db.Model):
+ id=db.Column(db.Integer,primary_key=True)
+ device_id=db.Column(db.Integer,db.ForeignKey('device.id'),unique=True,nullable=False,index=True)
+ key_hash=db.Column(db.String(64),nullable=False)
+ created_at=db.Column(db.DateTime(timezone=True),default=utc)
+
+class AgentSetting(db.Model):
+ id=db.Column(db.Integer,primary_key=True)
+ device_id=db.Column(db.Integer,db.ForeignKey('device.id'),unique=True,nullable=False,index=True)
+ screenshot_interval=db.Column(db.Integer,nullable=False,default=300)
+ screenshots_enabled=db.Column(db.Boolean,nullable=False,default=True)
+ keyword_enabled=db.Column(db.Boolean,nullable=False,default=True)
+
 class Activity(db.Model):
  id=db.Column(db.Integer,primary_key=True);device_id=db.Column(db.Integer,db.ForeignKey('device.id'),nullable=False,index=True);app_name=db.Column(db.String(200),nullable=False);seconds=db.Column(db.Integer,nullable=False);idle_seconds=db.Column(db.Integer,default=0);recorded_at=db.Column(db.DateTime(timezone=True),default=utc,index=True)
 class BlockRule(db.Model):
@@ -133,6 +146,67 @@ with app.app_context():db.create_all()
 def csrf_guard():
  if request.method in ('POST','PUT','PATCH','DELETE') and not request.path.startswith('/api/'):
   if request.endpoint!='login' and not secrets.compare_digest(session.get('csrf',''),request.form.get('csrf','')):abort(400,'Invalid CSRF token')
+# Language preference is stored in the signed administrator session.
+UI_TRANSLATIONS = {
+ 'en': {'overview':'Overview','devices':'Employees & devices','activity':'Activity','domains':'Domain policies','transfers':'File transfers','incidents':'DLP incidents','keyword':'Keyword DLP','blocks':'Domain block events','audit':'Audit log','signout':'Sign out','workspace':'Workspace overview','subtitle':'Devices, activity monitoring, domain policies and DLP alerts in one place.','registered':'Registered devices','reporting':'Reporting recently','policies':'Domain policies','active_rules':'Active keyword rules','alerts':'Keyword alerts','security':'Security operations'},
+ 'ru': {'overview':'Обзор','devices':'Сотрудники и устройства','activity':'Активность','domains':'Правила доменов','transfers':'Передача файлов','incidents':'Инциденты DLP','keyword':'Ключевые слова DLP','blocks':'Блокировки доменов','audit':'Журнал аудита','signout':'Выйти','workspace':'Обзор системы','subtitle':'Устройства, мониторинг активности, политики доменов и оповещения DLP.','registered':'Зарегистрированные устройства','reporting':'Недавно на связи','policies':'Правила доменов','active_rules':'Активные правила','alerts':'Оповещения','security':'Операции безопасности'},
+ 'uz': {'overview':'Umumiy ko‘rinish','devices':'Xodimlar va qurilmalar','activity':'Faollik','domains':'Domen qoidalari','transfers':'Fayl uzatish','incidents':'DLP hodisalari','keyword':'Kalit so‘z DLP','blocks':'Domen bloklari','audit':'Audit jurnali','signout':'Chiqish','workspace':'Tizim ko‘rinishi','subtitle':'Qurilmalar, faollik nazorati, domen qoidalari va DLP ogohlantirishlari.','registered':'Ro‘yxatdagi qurilmalar','reporting':'Yaqinda faol','policies':'Domen qoidalari','active_rules':'Faol kalit so‘z qoidalari','alerts':'Ogohlantirishlar','security':'Xavfsizlik boshqaruvi'}
+}
+for _lang,_text in zip(('en','ru','uz'),('Language', 'Язык', 'Til')):UI_TRANSLATIONS[_lang]['language']=_text
+for _lang,_text in zip(('en','ru','uz'),('Device settings', 'Настройки устройства', 'Qurilma sozlamalari')):UI_TRANSLATIONS[_lang]['device_settings']=_text
+for _lang,_text in zip(('en','ru','uz'),('Changes are downloaded by the agent every five minutes. Screenshots require an active, visible employee-started work session.', 'Агент получает изменения каждые пять минут. Снимки экрана доступны только во время видимого рабочего сеанса, начатого сотрудником.', 'Agent sozlamalarni har besh daqiqada oladi. Skrinshotlar faqat xodim boshlagan ko‘rinadigan ish seansida olinadi.')):UI_TRANSLATIONS[_lang]['settings_help']=_text
+for _lang,_text in zip(('en','ru','uz'),('Screenshot interval (seconds)', 'Интервал снимков (секунды)', 'Skrinshot oralig‘i (soniya)')):UI_TRANSLATIONS[_lang]['screenshot_interval']=_text
+for _lang,_text in zip(('en','ru','uz'),('Enable work-session screenshots', 'Включить снимки рабочего сеанса', 'Ish seansi skrinshotlarini yoqish')):UI_TRANSLATIONS[_lang]['screenshots_enabled']=_text
+for _lang,_text in zip(('en','ru','uz'),('Enable keyword alerts', 'Включить оповещения по ключевым словам', 'Kalit so‘z ogohlantirishlarini yoqish')):UI_TRANSLATIONS[_lang]['keyword_enabled']=_text
+for _lang,_text in zip(('en','ru','uz'),('Save settings', 'Сохранить настройки', 'Sozlamalarni saqlash')):UI_TRANSLATIONS[_lang]['save_settings']=_text
+for _lang,_text in zip(('en','ru','uz'),('Employee profile', 'Профиль сотрудника', 'Xodim profili')):UI_TRANSLATIONS[_lang]['employee_profile']=_text
+for _lang,_text in zip(('en','ru','uz'),('Take Screenshot', 'Сделать снимок экрана', 'Skrinshot olish')):UI_TRANSLATIONS[_lang]['take_screenshot']=_text
+for _lang,_text in zip(('en','ru','uz'),('Request camera photo', 'Запросить фото с камеры', 'Kamera suratini so‘rash')):UI_TRANSLATIONS[_lang]['camera_request']=_text
+for _lang,_text in zip(('en','ru','uz'),('Application usage', 'Использование приложений', 'Ilovalardan foydalanish')):UI_TRANSLATIONS[_lang]['application_usage']=_text
+for _lang,_text in zip(('en','ru','uz'),('Website usage', 'Посещение сайтов', 'Saytlardan foydalanish')):UI_TRANSLATIONS[_lang]['website_usage']=_text
+for _lang,_text in zip(('en','ru','uz'),('Camera and legacy capture history', 'История камеры и старых снимков', 'Kamera va eski suratlar tarixi')):UI_TRANSLATIONS[_lang]['camera_history']=_text
+for _lang,_text in zip(('en','ru','uz'),('Work-session screenshots', 'Снимки рабочего сеанса', 'Ish seansi skrinshotlari')):UI_TRANSLATIONS[_lang]['work_screenshots']=_text
+for _lang,_text in zip(('en','ru','uz'),('Detailed event timeline', 'Подробная история событий', 'Batafsil hodisalar tarixi')):UI_TRANSLATIONS[_lang]['detailed_timeline']=_text
+for _lang,_text in zip(('en','ru','uz'),('Save profile', 'Сохранить профиль', 'Profilni saqlash')):UI_TRANSLATIONS[_lang]['save_profile']=_text
+for _lang,_text in zip(('en','ru','uz'),('All employees', 'Все сотрудники', 'Barcha xodimlar')):UI_TRANSLATIONS[_lang]['all_employees']=_text
+for _lang,_text in zip(('en','ru','uz'),('Requested', 'Запрошено', 'So‘ralgan')):UI_TRANSLATIONS[_lang]['requested']=_text
+for _lang,_text in zip(('en','ru','uz'),('Type', 'Тип', 'Turi')):UI_TRANSLATIONS[_lang]['type']=_text
+for _lang,_text in zip(('en','ru','uz'),('Status', 'Статус', 'Holat')):UI_TRANSLATIONS[_lang]['status']=_text
+for _lang,_text in zip(('en','ru','uz'),('Result', 'Результат', 'Natija')):UI_TRANSLATIONS[_lang]['result']=_text
+for _lang,_text in zip(('en','ru','uz'),('No reports yet', 'Пока нет отчётов', 'Hali hisobotlar yo‘q')):UI_TRANSLATIONS[_lang]['no_reports']=_text
+for _lang,_text in zip(('en','ru','uz'),('View image', 'Открыть изображение', 'Rasmni ko‘rish')):UI_TRANSLATIONS[_lang]['open_image']=_text
+for _lang,_text in zip(('en','ru','uz'),('Keyword detection', 'Поиск ключевых слов', 'Kalit so‘zlarni aniqlash')):UI_TRANSLATIONS[_lang]['keyword_detection']=_text
+for _lang,_text in zip(('en','ru','uz'),('Devices and application usage', 'Устройства и использование приложений', 'Qurilmalar va ilovalardan foydalanish')):UI_TRANSLATIONS[_lang]['devices_usage']=_text
+for _lang,_text in zip(('en','ru','uz'),('Domain block policies', 'Правила блокировки доменов', 'Domen bloklash qoidalari')):UI_TRANSLATIONS[_lang]['domain_block_policies']=_text
+for _lang,_text in zip(('en','ru','uz'),('Add policy', 'Добавить правило', 'Qoida qo‘shish')):UI_TRANSLATIONS[_lang]['add_policy']=_text
+for _lang,_text in zip(('en','ru','uz'),('Remove', 'Удалить', 'O‘chirish')):UI_TRANSLATIONS[_lang]['remove']=_text
+for _lang,_text in zip(('en','ru','uz'),('Recent alert', 'Недавнее оповещение', 'So‘nggi ogohlantirish')):UI_TRANSLATIONS[_lang]['recent_alert']=_text
+for _lang,_text in zip(('en','ru','uz'),('Device ID', 'ID устройства', 'Qurilma ID')):UI_TRANSLATIONS[_lang]['device_id']=_text
+for _lang,_text in zip(('en','ru','uz'),('File', 'Файл', 'Fayl')):UI_TRANSLATIONS[_lang]['file']=_text
+for _lang,_text in zip(('en','ru','uz'),('Time (UTC)', 'Время (UTC)', 'Vaqt (UTC)')):UI_TRANSLATIONS[_lang]['time_utc']=_text
+for _lang,_text in zip(('en','ru','uz'),('Online', 'В сети', 'Onlayn')):UI_TRANSLATIONS[_lang]['online']=_text
+for _lang,_text in zip(('en','ru','uz'),('Offline', 'Не в сети', 'Oflayn')):UI_TRANSLATIONS[_lang]['offline']=_text
+for _lang,_text in zip(('en','ru','uz'),('Never', 'Никогда', 'Hech qachon')):UI_TRANSLATIONS[_lang]['never']=_text
+for _lang,_text in zip(('en','ru','uz'),('View activity', 'Просмотр активности', 'Faollikni ko‘rish')):UI_TRANSLATIONS[_lang]['view_activity']=_text
+for _lang,_text in zip(('en','ru','uz'),('Disable', 'Отключить', 'O‘chirish')):UI_TRANSLATIONS[_lang]['disable']=_text
+for _lang,_text in zip(('en','ru','uz'),('Enable', 'Включить', 'Yoqish')):UI_TRANSLATIONS[_lang]['enable']=_text
+for _lang,_text in zip(('en','ru','uz'),('No agents have reported yet.', 'Агенты пока не отправляли данные.', 'Agentlar hali ma’lumot yubormagan.')):UI_TRANSLATIONS[_lang]['no_agents']=_text
+for _lang,_text in zip(('en','ru','uz'),('No changes yet.', 'Изменений пока нет.', 'Hali o‘zgarishlar yo‘q.')):UI_TRANSLATIONS[_lang]['no_changes']=_text
+for _lang,_text in zip(('en','ru','uz'),('Action', 'Действие', 'Amal')):UI_TRANSLATIONS[_lang]['action']=_text
+for _lang,_text in zip(('en','ru','uz'),('Domain', 'Домен', 'Domen')):UI_TRANSLATIONS[_lang]['domain']=_text
+for _lang,_text in zip(('en','ru','uz'),('Last seen (UTC)', 'Последняя связь (UTC)', 'Oxirgi aloqa (UTC)')):UI_TRANSLATIONS[_lang]['last_seen']=_text
+@app.get('/language/<lang>')
+@admin_required
+def set_language(lang):
+ if lang not in UI_TRANSLATIONS:abort(404)
+ session['language']=lang
+ return redirect(request.referrer if request.referrer and request.referrer.startswith(request.host_url) else url_for('dashboard'))
+@app.context_processor
+def inject_language():
+ lang=session.get('language','en')
+ if lang not in UI_TRANSLATIONS:lang='en'
+ return {'lang':lang,'t':lambda key:UI_TRANSLATIONS[lang].get(key,key)}
+
 @app.context_processor
 def inject_csrf():return {'csrf_token':lambda:session.setdefault('csrf',secrets.token_urlsafe(32))}
 def admin_required(fn):
@@ -141,7 +215,66 @@ def admin_required(fn):
   if not session.get('admin'):return redirect(url_for('login'))
   return fn(*a,**kw)
  return inner
-def agent_auth():return bool(os.environ.get('AGENT_API_KEY')) and secrets.compare_digest(request.headers.get('X-Agent-Key',''),os.environ['AGENT_API_KEY'])
+def agent_auth():
+ key=request.headers.get('X-Agent-Key','')
+ if not key:return False
+ legacy=os.environ.get('AGENT_API_KEY','')
+ if legacy and secrets.compare_digest(key,legacy):return True
+ agent_id=(request.view_args or {}).get('agent_id')
+ if not agent_id:
+  body=request.get_json(silent=True) if request.is_json else None
+  agent_id=(body or {}).get('agent_id') if isinstance(body,dict) else request.form.get('agent_id')
+ if not agent_id:return False
+ d=Device.query.filter_by(agent_id=agent_id,enabled=True).first()
+ if not d:return False
+ credential=AgentCredential.query.filter_by(device_id=d.id).first()
+ return bool(credential) and secrets.compare_digest(credential.key_hash,hashlib.sha256(key.encode()).hexdigest())
+
+@app.post('/api/v1/enroll')
+def enroll_agent():
+ # Enrollment token is an administrator-provided one-time installation secret.
+ # Protect this endpoint with HTTPS and rotate the bootstrap secret after rollout.
+ token=os.environ.get('AGENT_ENROLLMENT_TOKEN','')
+ if len(token)<32 or not secrets.compare_digest(request.headers.get('X-Enrollment-Token',''),token):
+  return jsonify(error='enrollment unavailable or unauthorized'),403
+ body=request.get_json(silent=True) or {}
+ agent_id=str(body.get('agent_id','')).strip()
+ if not re.fullmatch(r'[A-Za-z0-9_.-]{1,100}',agent_id):return jsonify(error='invalid agent id'),400
+ d=Device.query.filter_by(agent_id=agent_id).first()
+ if d and AgentCredential.query.filter_by(device_id=d.id).first():return jsonify(error='already enrolled; contact IT for reset'),409
+ if not d:
+  d=Device(agent_id=agent_id,name=str(body.get('name') or agent_id)[:120]);db.session.add(d);db.session.flush()
+ key=secrets.token_urlsafe(48)
+ db.session.add(AgentCredential(device_id=d.id,key_hash=hashlib.sha256(key.encode()).hexdigest()))
+ db.session.add(Audit(action=f'Agent enrolled: {agent_id}'))
+ db.session.commit()
+ return jsonify(agent_id=agent_id,agent_key=key),201
+
+@app.get('/api/v1/agent-settings/<agent_id>')
+def get_agent_settings(agent_id):
+ if not agent_auth():return jsonify(error='unauthorized'),401
+ d=Device.query.filter_by(agent_id=agent_id,enabled=True).first()
+ if not d:return jsonify(error='unknown device'),404
+ st=AgentSetting.query.filter_by(device_id=d.id).first()
+ return jsonify(screenshot_interval=st.screenshot_interval if st else 300,
+  screenshots_enabled=st.screenshots_enabled if st else True,
+  keyword_enabled=st.keyword_enabled if st else True)
+
+@app.post('/devices/<int:device_id>/agent-settings')
+@admin_required
+def update_agent_settings(device_id):
+ d=db.get_or_404(Device,device_id)
+ try:interval=int(request.form.get('screenshot_interval','300'))
+ except ValueError:abort(400,'Invalid interval')
+ if not 60<=interval<=3600:abort(400,'Interval must be 60–3600 seconds')
+ st=AgentSetting.query.filter_by(device_id=d.id).first()
+ if not st:st=AgentSetting(device_id=d.id);db.session.add(st)
+ st.screenshot_interval=interval
+ st.screenshots_enabled=request.form.get('screenshots_enabled')=='on'
+ st.keyword_enabled=request.form.get('keyword_enabled')=='on'
+ db.session.add(Audit(action=f'Admin updated agent settings for {d.agent_id}'))
+ db.session.commit();flash('Device settings saved')
+ return redirect(url_for('detail',device_id=d.id))
 @app.route('/login',methods=['GET','POST'])
 def login():
  if request.method=='POST':
@@ -184,7 +317,7 @@ def detail(device_id):
  profile=EmployeeProfile.query.filter_by(device_id=d.id).first()
  captures=CaptureRequest.query.filter_by(device_id=d.id).order_by(CaptureRequest.id.desc()).limit(50).all()
  work_screenshots=ScheduledScreenshot.query.filter_by(device_id=d.id).order_by(ScheduledScreenshot.captured_at.desc()).limit(50).all()
- return render_template('detail.html',device=d,profile=profile,captures=captures,work_screenshots=work_screenshots,rows=rows,app_totals=app_totals,web_totals=web_totals,events=events,timeline=timeline)
+ return render_template('detail.html',agent_settings=AgentSetting.query.filter_by(device_id=d.id).first(),device=d,profile=profile,captures=captures,work_screenshots=work_screenshots,rows=rows,app_totals=app_totals,web_totals=web_totals,events=events,timeline=timeline)
 # Images are private, served only to logged-in administrators.
 CAPTURE_DIR=Path(os.getenv('CAPTURE_STORAGE_DIR',str(Path(__file__).resolve().parent/'private_captures')))
 CAPTURE_DIR.mkdir(mode=0o700,parents=True,exist_ok=True)
